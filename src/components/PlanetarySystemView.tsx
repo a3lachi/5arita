@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { PlanetarySystems, fetchPlanetarySystems } from '../services/exoplanetService';
+import { Exoplanet, getExoplanetsForStar, getHabitableZone } from '../services/exoplanetService';
 import { GaiaStar, colorIndexToRGB } from '../services/gaiaService';
-import { Sphere, Ring, Text } from '@react-three/drei';
+import { Sphere, Ring, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface PlanetarySystemViewProps {
@@ -9,27 +9,85 @@ interface PlanetarySystemViewProps {
 }
 
 export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) {
-  const [system, setSystem] = useState<PlanetarySystems | null>(null);
+  const [planets, setPlanets] = useState<Exoplanet[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadSystem() {
-      const systems = await fetchPlanetarySystems();
-      const found = systems.find(s => s.gaia_id === star.source_id);
-      setSystem(found || null);
+    async function loadPlanets() {
+      setLoading(true);
+      const foundPlanets = await getExoplanetsForStar(
+        star.star_name || star.source_id,
+        star.ra,
+        star.dec
+      );
+      setPlanets(foundPlanets);
+      setLoading(false);
+      console.log(`Found ${foundPlanets.length} planets for ${star.star_name || star.source_id}`);
     }
-    loadSystem();
-  }, [star.source_id]);
+    loadPlanets();
+  }, [star.source_id, star.star_name, star.ra, star.dec]);
 
-  if (!system) {
-    return null;
+  if (loading) {
+    return (
+      <Html center>
+        <div style={{ color: 'white', fontSize: '20px' }}>Loading planetary system...</div>
+      </Html>
+    );
   }
 
-  // Star color from BP-RP
+  if (planets.length === 0) {
+    return (
+      <group>
+        {/* Show the star anyway */}
+        <Sphere args={[0.5, 32, 32]} position={[0, 0, 0]}>
+          <meshStandardMaterial
+            color={new THREE.Color(...colorIndexToRGB(star.bp_rp))}
+            emissive={new THREE.Color(...colorIndexToRGB(star.bp_rp))}
+            emissiveIntensity={2}
+            toneMapped={false}
+          />
+        </Sphere>
+
+        <Text
+          position={[0, 1.5, 0]}
+          fontSize={0.3}
+          color="white"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {star.star_name || 'Star'}
+        </Text>
+
+        <Html center position={[0, -2, 0]}>
+          <div style={{
+            color: 'white',
+            fontSize: '16px',
+            background: 'rgba(0,0,0,0.8)',
+            padding: '12px 20px',
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <div>No confirmed exoplanets found</div>
+            <div style={{ fontSize: '12px', color: '#aaa', marginTop: '8px' }}>
+              This star may have planets not yet discovered or confirmed by NASA
+            </div>
+          </div>
+        </Html>
+      </group>
+    );
+  }
+
+  // Star color from BP-RP or temperature
   const [r, g, b] = colorIndexToRGB(star.bp_rp);
   const starColor = new THREE.Color(r, g, b);
 
   // Scale factor for visualization (1 AU = 10 units in scene)
   const AU_SCALE = 10;
+
+  // Get habitable zone
+  const starTemp = planets[0]?.st_teff || star.teff_gspphot || 5778;
+  const starRadius = planets[0]?.st_rad || 1.0;
+  const { inner: hzInner, outer: hzOuter } = getHabitableZone(starTemp, starRadius);
 
   return (
     <group>
@@ -61,28 +119,44 @@ export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) 
         anchorX="center"
         anchorY="middle"
       >
-        {star.star_name || star.source_id.substring(0, 16)}
+        {planets[0]?.hostname || star.star_name || 'Host Star'}
       </Text>
 
-      {/* Planets and orbits */}
-      {system.planets.map((planet, i) => {
-        const orbitRadius = planet.semi_major_axis * AU_SCALE;
-        const planetRadius = Math.max(0.05, Math.min(planet.radius * 0.05, 0.3));
+      {/* System info */}
+      <Html position={[0, -2, 0]} center>
+        <div style={{
+          color: 'white',
+          fontSize: '14px',
+          background: 'rgba(0,0,0,0.7)',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          textAlign: 'center'
+        }}>
+          {planets.length} planet{planets.length > 1 ? 's' : ''} • {starTemp.toFixed(0)}K
+        </div>
+      </Html>
 
-        // Planet color based on temperature
+      {/* Planets and orbits */}
+      {planets.map((planet, i) => {
+        const orbitRadius = (planet.pl_orbsmax || 1) * AU_SCALE;
+        const planetRadiusEarth = planet.pl_rade || (planet.pl_radj ? planet.pl_radj * 11.2 : 1);
+        const planetRadius = Math.max(0.05, Math.min(planetRadiusEarth * 0.05, 0.4));
+
+        // Planet color based on properties
+        const temp = planet.pl_eqt || 288;
         const planetColor = planet.habitable ? '#4CAF50' : // Green for habitable
-                           planet.equilibrium_temp > 1000 ? '#FF6B6B' : // Red/hot
-                           planet.equilibrium_temp > 500 ? '#FFB74D' : // Orange
-                           planet.equilibrium_temp > 200 ? '#64B5F6' : // Blue
+                           temp > 1000 ? '#FF6B6B' : // Red/hot
+                           temp > 500 ? '#FFB74D' : // Orange
+                           temp > 200 ? '#64B5F6' : // Blue
                            '#90A4AE'; // Gray/cold
 
-        // Calculate orbital position (simplified - just angle)
-        const angle = (i / system.planets.length) * Math.PI * 2;
+        // Calculate orbital position (distribute evenly)
+        const angle = (i / planets.length) * Math.PI * 2;
         const x = Math.cos(angle) * orbitRadius;
         const z = Math.sin(angle) * orbitRadius;
 
         return (
-          <group key={planet.name}>
+          <group key={planet.pl_name}>
             {/* Orbit ring */}
             <Ring args={[orbitRadius - 0.02, orbitRadius + 0.02, 64]} rotation={[-Math.PI / 2, 0, 0]}>
               <meshBasicMaterial
@@ -98,48 +172,49 @@ export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) 
               <meshStandardMaterial color={planetColor} />
             </Sphere>
 
-            {/* Planet label */}
-            <Text
-              position={[x, planetRadius + 0.2, z]}
-              fontSize={0.15}
-              color="white"
-              anchorX="center"
-              anchorY="bottom"
-            >
-              {planet.name.split(' ').pop()}
-              {planet.habitable ? ' 🌍' : ''}
-            </Text>
+            {/* Planet label with details */}
+            <Html position={[x, planetRadius + 0.3, z]} center>
+              <div style={{
+                color: 'white',
+                fontSize: '12px',
+                background: 'rgba(0,0,0,0.8)',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                whiteSpace: 'nowrap',
+                textAlign: 'center'
+              }}>
+                <div>{planet.pl_name.split(' ').pop()}{planet.habitable ? ' 🌍' : ''}</div>
+                <div style={{ fontSize: '10px', color: '#aaa' }}>
+                  {planetRadiusEarth.toFixed(2)} R⊕ • {(planet.pl_orbsmax || 0).toFixed(2)} AU
+                </div>
+                {temp && (
+                  <div style={{ fontSize: '10px', color: '#aaa' }}>
+                    {temp.toFixed(0)}K
+                  </div>
+                )}
+              </div>
+            </Html>
           </group>
         );
       })}
 
       {/* Habitable zone visualization */}
-      {star.teff_gspphot && (() => {
-        const L = Math.pow(system.planets[0]?.semi_major_axis || 1, 2);
-        const hzInner = Math.sqrt(L / 1.1) * AU_SCALE;
-        const hzOuter = Math.sqrt(L / 0.53) * AU_SCALE;
-
-        return (
-          <>
-            <Ring args={[hzInner, hzOuter, 64]} rotation={[-Math.PI / 2, 0, 0]}>
-              <meshBasicMaterial
-                color="#4CAF50"
-                transparent
-                opacity={0.1}
-                side={THREE.DoubleSide}
-              />
-            </Ring>
-            <Text
-              position={[0, 0, hzOuter + 0.5]}
-              fontSize={0.2}
-              color="#4CAF50"
-              anchorX="center"
-            >
-              Habitable Zone
-            </Text>
-          </>
-        );
-      })()}
+      <Ring args={[hzInner * AU_SCALE, hzOuter * AU_SCALE, 64]} rotation={[-Math.PI / 2, 0, 0]}>
+        <meshBasicMaterial
+          color="#4CAF50"
+          transparent
+          opacity={0.1}
+          side={THREE.DoubleSide}
+        />
+      </Ring>
+      <Text
+        position={[0, 0, hzOuter * AU_SCALE + 0.5]}
+        fontSize={0.2}
+        color="#4CAF50"
+        anchorX="center"
+      >
+        Habitable Zone
+      </Text>
     </group>
   );
 }

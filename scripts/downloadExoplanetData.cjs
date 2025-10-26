@@ -1,60 +1,46 @@
-// Download exoplanet data from NASA Exoplanet Archive
-// This downloads confirmed exoplanets with host star coordinates
+// Download comprehensive exoplanet data from NASA Exoplanet Archive
+// Using TAP (Table Access Protocol) - the recommended API
+// Downloads ALL available planet properties including spectroscopy, atmospheric data, etc.
 
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const NASA_EXOPLANET_API = 'https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI';
+const NASA_TAP_ENDPOINT = 'https://exoplanetarchive.ipac.caltech.edu/TAP/sync';
 
-console.log('🪐 Downloading NASA Exoplanet Archive data...\n');
+console.log('🪐 Downloading NASA Exoplanet Archive data (TAP service)...\n');
 
 /**
- * Simple CSV parser
+ * Build comprehensive SQL query for all exoplanet data
  */
-function parseCSV(csv) {
-  const lines = csv.trim().split('\n');
-  if (lines.length < 2) return [];
-
-  const headers = lines[0].split(',');
-  const data = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',');
-    const obj = {};
-
-    headers.forEach((header, index) => {
-      const value = values[index];
-      // Convert to number if possible, otherwise keep as string
-      obj[header] = value === '' || value === 'null' ? null :
-                   !isNaN(value) && value !== '' ? parseFloat(value) : value;
-    });
-
-    data.push(obj);
-  }
-
-  return data;
+function buildQuery() {
+  // Use SELECT * to get all available columns
+  return `SELECT * FROM ps WHERE default_flag = 1`;
 }
 
 /**
- * Download confirmed exoplanets with all available data
+ * Download confirmed exoplanets with all available data using TAP
  */
 async function downloadExoplanets() {
-  // Using NASA Exoplanet Archive API (not TAP, use their simpler API)
-  // Planetary Systems Composite table with all confirmed planets
-  const params = new URLSearchParams({
-    table: 'pscomppars',
-    select: 'pl_name,hostname,sy_snum,sy_pnum,discoverymethod,disc_year,disc_facility,pl_orbper,pl_orbsmax,pl_rade,pl_bmasse,pl_orbeccen,pl_insol,pl_eqt,pl_orbincl,ra,dec,sy_dist,sy_plx,sy_vmag,sy_kmag,sy_gaiamag,st_teff,st_rad,st_mass,st_met,st_logg,st_age,st_spectype,sy_pm,sy_pmra,sy_pmdec,gaia_id',
-    format: 'csv',
-  });
+  const query = buildQuery();
+  const encodedQuery = encodeURIComponent(query);
+  const url = `${NASA_TAP_ENDPOINT}?query=${encodedQuery}&format=json`;
 
-  console.log('📡 Connecting to NASA Exoplanet Archive...');
-  console.log('🔍 Query: Downloading all confirmed exoplanets with coordinates\n');
+  console.log('📡 Connecting to NASA Exoplanet Archive TAP service...');
+  console.log('🔍 Query: Downloading ALL confirmed exoplanets with complete data');
+  console.log('📊 Including: orbital params, spectroscopy, photometry, colors, atmospheric data');
+  console.log('🔗 URL length:', url.length);
+  console.log('📝 Query:', query.substring(0, 200) + '...\n');
 
   return new Promise((resolve, reject) => {
-    const url = `${NASA_EXOPLANET_API}?${params.toString()}`;
-
     https.get(url, (res) => {
+      // Handle redirects
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        console.log(`↪️  Redirected to: ${res.headers.location}`);
+        https.get(res.headers.location, handleResponse).on('error', reject);
+        return;
+      }
+
       if (res.statusCode !== 200) {
         reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
         return;
@@ -67,25 +53,49 @@ async function downloadExoplanets() {
         data += chunk;
         totalBytes += chunk.length;
         // Show progress
-        if (totalBytes % 100000 < 10000) {
-          process.stdout.write(`\r📥 Downloaded: ${(totalBytes / 1024).toFixed(0)} KB`);
+        if (totalBytes % 500000 < 10000) {
+          process.stdout.write(`\r📥 Downloaded: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`);
         }
       });
 
       res.on('end', () => {
         process.stdout.write('\r✅ Download complete!                \n');
-        console.log('📊 Parsing CSV data...\n');
+        console.log('📊 Parsing JSON data...\n');
 
         try {
-          const parsed = parseCSV(data);
+          const parsed = JSON.parse(data);
           resolve(parsed);
         } catch (error) {
-          reject(new Error(`Failed to parse CSV: ${error.message}`));
+          reject(new Error(`Failed to parse JSON: ${error.message}`));
         }
       });
     }).on('error', (error) => {
       reject(error);
     });
+
+    function handleResponse(res) {
+      let data = '';
+      let totalBytes = 0;
+
+      res.on('data', (chunk) => {
+        data += chunk;
+        totalBytes += chunk.length;
+        if (totalBytes % 500000 < 10000) {
+          process.stdout.write(`\r📥 Downloaded: ${(totalBytes / 1024 / 1024).toFixed(2)} MB`);
+        }
+      });
+
+      res.on('end', () => {
+        process.stdout.write('\r✅ Download complete!                \n');
+        console.log('📊 Parsing JSON data...\n');
+        try {
+          const parsed = JSON.parse(data);
+          resolve(parsed);
+        } catch (error) {
+          reject(new Error(`Failed to parse JSON: ${error.message}`));
+        }
+      });
+    }
   });
 }
 
@@ -109,55 +119,8 @@ async function processExoplanetData() {
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    // Process each exoplanet
-    const exoplanets = rawData.map(planet => ({
-      // Planet identification
-      pl_name: planet.pl_name,
-      hostname: planet.hostname,
-      sy_snum: planet.sy_snum, // Number of stars in system
-      sy_pnum: planet.sy_pnum, // Number of planets in system
-
-      // Discovery info
-      discoverymethod: planet.discoverymethod,
-      disc_year: planet.disc_year,
-      disc_facility: planet.disc_facility,
-
-      // Orbital parameters
-      pl_orbper: planet.pl_orbper, // Orbital period (days)
-      pl_orbsmax: planet.pl_orbsmax, // Semi-major axis (AU)
-      pl_rade: planet.pl_rade, // Planet radius (Earth radii)
-      pl_bmasse: planet.pl_bmasse, // Planet mass (Earth masses)
-      pl_orbeccen: planet.pl_orbeccen, // Orbital eccentricity
-      pl_insol: planet.pl_insol, // Insolation flux (Earth = 1)
-      pl_eqt: planet.pl_eqt, // Equilibrium temperature (K)
-      pl_orbincl: planet.pl_orbincl, // Orbital inclination (degrees)
-
-      // Host star coordinates (for matching with Gaia)
-      ra: planet.ra,
-      dec: planet.dec,
-      sy_dist: planet.sy_dist, // Distance (parsecs)
-      sy_plx: planet.sy_plx, // Parallax (mas)
-
-      // Host star properties
-      sy_vmag: planet.sy_vmag, // V magnitude
-      sy_kmag: planet.sy_kmag, // K magnitude
-      sy_gaiamag: planet.sy_gaiamag, // Gaia magnitude
-      st_teff: planet.st_teff, // Stellar temperature (K)
-      st_rad: planet.st_rad, // Stellar radius (Solar radii)
-      st_mass: planet.st_mass, // Stellar mass (Solar masses)
-      st_met: planet.st_met, // Stellar metallicity
-      st_logg: planet.st_logg, // Stellar surface gravity
-      st_age: planet.st_age, // Stellar age (Gyr)
-      st_spectype: planet.st_spectype, // Spectral type
-
-      // Proper motion
-      sy_pm: planet.sy_pm, // Total proper motion (mas/yr)
-      sy_pmra: planet.sy_pmra, // PM in RA (mas/yr)
-      sy_pmdec: planet.sy_pmdec, // PM in Dec (mas/yr)
-
-      // Gaia identifier (for direct matching)
-      gaia_id: planet.gaia_id,
-    }));
+    // Keep ALL data from NASA - no filtering
+    const exoplanets = rawData;
 
     // Save complete dataset
     const exoplanetsFile = path.join(dataDir, 'exoplanets.json');
@@ -220,9 +183,26 @@ function analyzeExoplanets(exoplanets) {
     withCoordinates: exoplanets.filter(p => p.ra && p.dec).length,
     withGaiaId: exoplanets.filter(p => p.gaia_id).length,
     withRadius: exoplanets.filter(p => p.pl_rade).length,
-    withMass: exoplanets.filter(p => p.pl_bmasse).length,
+    withMass: exoplanets.filter(p => p.pl_bmasse || p.pl_masse).length,
+    withDensity: exoplanets.filter(p => p.pl_dens).length,
+    withTemperature: exoplanets.filter(p => p.pl_eqt).length,
+
+    // Spectroscopy/atmospheric data
+    withTransmissionSpec: exoplanets.filter(p => p.pl_ntranspec > 0).length,
+    withEclipseSpec: exoplanets.filter(p => p.pl_nespec > 0).length,
+    withDirectImaging: exoplanets.filter(p => p.pl_ndispec > 0).length,
+
+    // Photometry for colors
+    withMultibandPhotometry: exoplanets.filter(p =>
+      (p.sy_bmag || p.sy_vmag || p.sy_rmag || p.sy_imag || p.sy_zmag)
+    ).length,
+    withInfraredPhotometry: exoplanets.filter(p =>
+      (p.sy_jmag || p.sy_hmag || p.sy_kmag)
+    ).length,
+
     byMethod: {},
     byYear: {},
+
     earthLike: exoplanets.filter(p =>
       p.pl_rade >= 0.8 && p.pl_rade <= 1.25 &&
       p.pl_eqt >= 250 && p.pl_eqt <= 300
@@ -250,7 +230,18 @@ function printStatistics(stats, exoplanets) {
   console.log(`   With coordinates: ${stats.withCoordinates.toLocaleString()}`);
   console.log(`   With Gaia ID: ${stats.withGaiaId.toLocaleString()}`);
   console.log(`   With radius data: ${stats.withRadius.toLocaleString()}`);
-  console.log(`   With mass data: ${stats.withMass.toLocaleString()}\n`);
+  console.log(`   With mass data: ${stats.withMass.toLocaleString()}`);
+  console.log(`   With density data: ${stats.withDensity.toLocaleString()}`);
+  console.log(`   With temperature data: ${stats.withTemperature.toLocaleString()}\n`);
+
+  console.log('🔬 Spectroscopy & Atmospheric Data:');
+  console.log(`   With transmission spectroscopy: ${stats.withTransmissionSpec.toLocaleString()}`);
+  console.log(`   With eclipse spectroscopy: ${stats.withEclipseSpec.toLocaleString()}`);
+  console.log(`   With direct imaging spectroscopy: ${stats.withDirectImaging.toLocaleString()}\n`);
+
+  console.log('🎨 Photometry (for color calculations):');
+  console.log(`   With multiband optical photometry: ${stats.withMultibandPhotometry.toLocaleString()}`);
+  console.log(`   With infrared photometry: ${stats.withInfraredPhotometry.toLocaleString()}\n`);
 
   console.log('🌍 Planet Types:');
   console.log(`   Earth-like (habitable zone): ${stats.earthLike}`);

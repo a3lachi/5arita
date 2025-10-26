@@ -13,9 +13,12 @@ interface UIProps {
   loading: boolean;
   viewMode: ViewMode;
   onReturnToGalaxy: () => void;
+  showOnlyPlanets: boolean;
+  onTogglePlanetFilter: () => void;
+  planetarySystemCount: number;
 }
 
-export default function UI({ selectedStar, starCount, loading, viewMode, onReturnToGalaxy }: UIProps) {
+export default function UI({ selectedStar, starCount, loading, viewMode, onReturnToGalaxy, showOnlyPlanets, onTogglePlanetFilter, planetarySystemCount }: UIProps) {
   const distance = selectedStar ? getDistanceInLightYears(selectedStar.parallax) : 0;
   const spectralClass = selectedStar ? getSpectralClass(selectedStar.teff_gspphot) : '';
   const totalPM = selectedStar
@@ -28,6 +31,22 @@ export default function UI({ selectedStar, starCount, loading, viewMode, onRetur
         <h1>Preview</h1>
         <p className="subtitle">Milky Way Galaxy Map</p>
       </div>
+
+      {/* Filter Toggle (only in galaxy view) */}
+      {viewMode === 'galaxy' && (
+        <div className="filter-panel">
+          <label className="filter-toggle">
+            <input
+              type="checkbox"
+              checked={showOnlyPlanets}
+              onChange={onTogglePlanetFilter}
+            />
+            <span className="toggle-label">
+              🪐 Show only stars with exoplanets
+            </span>
+          </label>
+        </div>
+      )}
 
       {/* Info Panel */}
       <div className="info-panel">
@@ -43,6 +62,12 @@ export default function UI({ selectedStar, starCount, loading, viewMode, onRetur
           <span className="label">Stars Loaded:</span>
           <span className="value">{loading ? 'Loading...' : starCount.toLocaleString()}</span>
         </div>
+        {viewMode === 'galaxy' && planetarySystemCount > 0 && (
+          <div className="info-item">
+            <span className="label">🪐 Planetary Systems:</span>
+            <span className="value">{planetarySystemCount.toLocaleString()}</span>
+          </div>
+        )}
         {selectedStar && (
           <>
             <div className="divider"></div>

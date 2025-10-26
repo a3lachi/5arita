@@ -11,7 +11,9 @@
     "download:exoplanets": "node scripts/downloadExoplanetData.cjs",
     "generate:data": "node scripts/generateMilkyWayData.cjs",
     "generate:exoplanets": "node scripts/generateExoplanetData.cjs",
-    "add:names": "node scripts/addStarNames.cjs"
+    "add:names": "node scripts/addStarNames.cjs",
+    "link:planets": "node scripts/linkExoplanetsToStars.cjs",
+    "add:hosts": "node scripts/addExoplanetHostStars.cjs"
   },
   "license": "MIT",
   "packageManager": "pnpm@10.15.0",

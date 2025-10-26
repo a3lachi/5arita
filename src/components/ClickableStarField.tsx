@@ -1,9 +1,8 @@
 import { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Text, Html } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import {
-  fetchGaiaStars,
   equatorialToCartesian,
   parallaxToDistance,
   magnitudeToSize,
@@ -14,30 +13,13 @@ import { starVertexShader, starFragmentShader } from '../shaders/starShader';
 
 interface ClickableStarFieldProps {
   onStarClick: (star: GaiaStar) => void;
+  stars: GaiaStar[];
 }
 
-export default function ClickableStarField({ onStarClick }: ClickableStarFieldProps) {
+export default function ClickableStarField({ onStarClick, stars }: ClickableStarFieldProps) {
   const pointsRef = useRef<THREE.Points>(null);
-  const [stars, setStars] = useState<GaiaStar[]>([]);
-  const [loading, setLoading] = useState(true);
   const [hoveredStar, setHoveredStar] = useState<{ star: GaiaStar; position: [number, number, number] } | null>(null);
   const { camera, raycaster, pointer } = useThree();
-
-  // Fetch Gaia data on mount
-  useEffect(() => {
-    async function loadStars() {
-      setLoading(true);
-      try {
-        const gaiaStars = await fetchGaiaStars(50000, -2, 10);
-        setStars(gaiaStars);
-      } catch (error) {
-        console.error('Failed to load stars:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadStars();
-  }, []);
 
   // Generate star positions and properties
   const { positions, sizes, colors, starData } = useMemo(() => {
@@ -147,7 +129,7 @@ export default function ClickableStarField({ onStarClick }: ClickableStarFieldPr
     }
   }, [hoveredStar]);
 
-  if (loading || stars.length === 0) {
+  if (stars.length === 0) {
     return null;
   }
 

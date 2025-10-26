@@ -21,7 +21,7 @@ interface SceneProps {
   onCameraChange: Dispatch<SetStateAction<CameraState | null>>;
 }
 
-export default function Scene({ stars: _stars, selectedStar, viewMode, onStarClick, onCameraChange: _onCameraChange }: SceneProps) {
+export default function Scene({ stars, selectedStar, viewMode, onStarClick, onCameraChange: _onCameraChange }: SceneProps) {
   return (
     <Canvas gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
       {/* Camera */}
@@ -49,7 +49,7 @@ export default function Scene({ stars: _stars, selectedStar, viewMode, onStarCli
           />
 
           {/* Gaia star field with realistic 3D models */}
-          <ClickableStarField onStarClick={onStarClick} />
+          <ClickableStarField onStarClick={onStarClick} stars={stars} />
         </>
       ) : selectedStar ? (
         /* Planetary system view */
