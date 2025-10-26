@@ -37,14 +37,25 @@ pnpm install
 
 # Generate Milky Way star dataset (50,000 stars)
 pnpm generate:data
+
+# Generate exoplanet data (4,700+ planets linked to stars)
+pnpm generate:exoplanets
 ```
 
-This will create a 27MB JSON file with 50,000 stars including:
+**Star Dataset** (27MB): 50,000 stars including:
 - Complete positional data (RA, Dec, distance)
 - Photometric data (magnitudes, colors)
 - Physical properties (temperature, spectral class, metallicity)
 - Kinematic data (proper motion, radial velocity)
 - Realistic spectral class distribution (O/B/A/F/G/K/M stars)
+
+**Exoplanet Dataset** (5.7MB): 4,727 exoplanets including:
+- 2,700 host stars (linked to Milky Way dataset via Gaia ID)
+- 236 potentially habitable planets
+- Orbital parameters (period, semi-major axis, eccentricity)
+- Physical properties (radius, mass, temperature)
+- Discovery methods (Transit, Radial Velocity, etc.)
+- Habitable zone calculations
 
 ### Development
 

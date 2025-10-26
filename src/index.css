@@ -248,6 +248,33 @@ body {
   text-align: right;
 }
 
+/* Return Button */
+.return-button {
+  position: absolute;
+  top: 30px;
+  right: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+}
+
+.return-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.return-button:active {
+  transform: translateY(0);
+}
+
 /* Controls Hint */
 .controls-hint {
   position: absolute;

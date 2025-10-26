@@ -5,13 +5,17 @@ import {
   getTotalProperMotion,
 } from '../services/gaiaService';
 
+type ViewMode = 'galaxy' | 'system';
+
 interface UIProps {
   selectedStar: GaiaStar | null;
   starCount: number;
   loading: boolean;
+  viewMode: ViewMode;
+  onReturnToGalaxy: () => void;
 }
 
-export default function UI({ selectedStar, starCount, loading }: UIProps) {
+export default function UI({ selectedStar, starCount, loading, viewMode, onReturnToGalaxy }: UIProps) {
   const distance = selectedStar ? getDistanceInLightYears(selectedStar.parallax) : 0;
   const spectralClass = selectedStar ? getSpectralClass(selectedStar.teff_gspphot) : '';
   const totalPM = selectedStar
@@ -42,7 +46,13 @@ export default function UI({ selectedStar, starCount, loading }: UIProps) {
         {selectedStar && (
           <>
             <div className="divider"></div>
-            <h3>⭐ Selected Star</h3>
+            <h3>⭐ {selectedStar.star_name || 'Selected Star'}</h3>
+            {selectedStar.has_planets && (
+              <div className="info-item">
+                <span className="label">🪐 Planets:</span>
+                <span className="value">{selectedStar.planet_count}</span>
+              </div>
+            )}
             <div className="info-item">
               <span className="label">Source ID:</span>
               <span className="value-small">{selectedStar.source_id.substring(0, 16)}...</span>
@@ -133,11 +143,19 @@ export default function UI({ selectedStar, starCount, loading }: UIProps) {
         )}
       </div>
 
+      {/* Return button (show in system view) */}
+      {viewMode === 'system' && (
+        <button className="return-button" onClick={onReturnToGalaxy}>
+          ← Return to Galaxy View
+        </button>
+      )}
+
       {/* Controls hint */}
       <div className="controls-hint">
         <p>🖱️ Left Click + Drag: Rotate</p>
         <p>🖱️ Right Click + Drag: Pan</p>
         <p>🖱️ Scroll: Zoom</p>
+        {viewMode === 'galaxy' && <p>🖱️ Click Star: View System</p>}
       </div>
 
       {/* Footer */}

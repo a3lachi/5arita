@@ -3,6 +3,7 @@
 
 export interface GaiaStar {
   source_id: string;
+  star_name?: string; // Human-readable star name
   ra: number; // Right Ascension (degrees)
   dec: number; // Declination (degrees)
   parallax: number; // Distance indicator (milliarcseconds)
@@ -21,6 +22,8 @@ export interface GaiaStar {
   radial_velocity_error?: number; // Radial velocity uncertainty
   phot_variable_flag?: string; // Variability flag
   ruwe?: number; // Renormalized unit weight error (quality)
+  has_planets?: boolean; // Whether this star has known exoplanets
+  planet_count?: number; // Number of known planets
 }
 
 // const GAIA_TAP_URL = 'https://gea.esac.esa.gov/tap-server/tap/sync'; // Unused - kept for reference

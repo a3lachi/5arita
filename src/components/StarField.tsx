@@ -12,10 +12,11 @@ import {
 import { starVertexShader, starFragmentShader } from '../shaders/starShader';
 
 interface StarFieldProps {
-  onStarSelect?: (star: GaiaStar | null) => void;
+  onStarClick: (star: GaiaStar) => void;
 }
 
-export default function StarField({ onStarSelect: _onStarSelect }: StarFieldProps) {
+export default function StarField({ onStarClick: _onStarClick }: StarFieldProps) {
+  // TODO: Implement star click handling with raycasting
   const pointsRef = useRef<THREE.Points>(null);
   const [stars, setStars] = useState<GaiaStar[]>([]);
   const [loading, setLoading] = useState(true);
