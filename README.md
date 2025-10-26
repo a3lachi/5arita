@@ -14,19 +14,55 @@ This project focuses on streaming astronomy datasets (Gaia/SDSS/DESI/NASA) and r
 
 ## Tech Stack
 
-- **Three.js** - 3D graphics rendering
-- **React** - UI framework
+- **Vite** - Fast build tool and dev server
+- **React 19** - UI framework
 - **TypeScript** - Type-safe development
+- **Three.js** - 3D graphics rendering
+- **React Three Fiber** - React renderer for Three.js
+- **React Three Drei** - Useful helpers for R3F
+- **pnpm** - Fast, efficient package manager
 - **Astronomy APIs** - Gaia, SDSS, DESI, NASA datasets
 
 ## Getting Started
 
+### Prerequisites
+- Node.js 18+
+- pnpm (recommended) or npm
+
+### Installation
+
 ```bash
 # Install dependencies
-npm install
+pnpm install
+```
 
-# Run development server
-npm run dev
+### Development
+
+```bash
+# Start development server (http://localhost:5173)
+pnpm dev
+```
+
+### Build
+
+```bash
+# Build for production
+pnpm build
+
+# Preview production build locally
+pnpm preview
+```
+
+### Deployment
+
+This project is optimized for deployment on Vercel:
+
+```bash
+# Install Vercel CLI
+pnpm add -g vercel
+
+# Deploy
+vercel
 ```
 
 ## License
