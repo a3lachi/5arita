@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "download:gaia": "node scripts/downloadGaiaData.cjs",
+    "generate:data": "node scripts/generateMilkyWayData.cjs"
   },
   "license": "MIT",
   "packageManager": "pnpm@10.15.0",

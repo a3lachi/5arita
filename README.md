@@ -34,7 +34,17 @@ This project focuses on streaming astronomy datasets (Gaia/SDSS/DESI/NASA) and r
 ```bash
 # Install dependencies
 pnpm install
+
+# Generate Milky Way star dataset (50,000 stars)
+pnpm generate:data
 ```
+
+This will create a 27MB JSON file with 50,000 stars including:
+- Complete positional data (RA, Dec, distance)
+- Photometric data (magnitudes, colors)
+- Physical properties (temperature, spectral class, metallicity)
+- Kinematic data (proper motion, radial velocity)
+- Realistic spectral class distribution (O/B/A/F/G/K/M stars)
 
 ### Development
 

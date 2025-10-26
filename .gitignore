@@ -19,6 +19,12 @@ dist-ssr
 .output
 .vercel.json
 
+# Large data files (regenerate with pnpm generate:data)
+public/data/*.json
+
+# Screenshots
+*.png
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
