@@ -6,8 +6,8 @@ export const CDN_CONFIG = {
   USE_CDN: true,
 
   // Base URL for your Vercel Blob Storage
-  // Format: https://your-blob-url.vercel-storage.com
-  BLOB_BASE_URL: 'https://6ep0fmc0ekul9vo1.public.blob.vercel-storage.com/',
+  // Format: https://your-blob-url.vercel-storage.com (no trailing slash)
+  BLOB_BASE_URL: 'https://6ep0fmc0ekul9vo1.public.blob.vercel-storage.com',
 
   // Data file paths
   MILKY_WAY_STARS: '/milky_way_stars.json',
