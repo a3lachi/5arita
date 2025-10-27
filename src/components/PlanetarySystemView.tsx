@@ -126,16 +126,31 @@ export default function PlanetarySystemView({ star, onPlanetSelect, onStarSelect
         />
       </Sphere>
 
-      {/* Star name - using Html so it follows camera */}
+      {/* Star name - using Html so it follows camera - clickable */}
       <Html position={[0, 1.5, 0]} center>
-        <div style={{
-          color: 'white',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          textShadow: '0 0 8px black, 0 0 12px black',
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-        }}>
+        <div
+          onClick={() => {
+            onStarSelect?.(star);
+            console.log('Star name clicked:', star.star_name);
+          }}
+          style={{
+            color: 'white',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            textShadow: '0 0 8px black, 0 0 12px black',
+            whiteSpace: 'nowrap',
+            cursor: 'pointer',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
           {planets[0]?.hostname || star.star_name || 'Host Star'}
         </div>
       </Html>
@@ -200,17 +215,33 @@ export default function PlanetarySystemView({ star, onPlanetSelect, onStarSelect
               <meshStandardMaterial color={planetColor} />
             </Sphere>
 
-            {/* Planet label - only name */}
+            {/* Planet label - only name - clickable */}
             <Html position={[x, planetRadius + 0.3, z]} center>
-              <div style={{
-                color: 'white',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                textShadow: '0 0 4px black, 0 0 8px black',
-                whiteSpace: 'nowrap',
-                textAlign: 'center',
-                pointerEvents: 'none',
-              }}>
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlanetSelect?.(planet);
+                  console.log('Planet name clicked:', planet.pl_name);
+                }}
+                style={{
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  textShadow: '0 0 4px black, 0 0 8px black',
+                  whiteSpace: 'nowrap',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 {planet.pl_name}{planet.habitable ? ' 🌍' : ''}
               </div>
             </Html>

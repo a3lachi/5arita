@@ -19,7 +19,7 @@ function App() {
   const [stars, setStars] = useState<GaiaStar[]>([]);
   const [allStars, setAllStars] = useState<GaiaStar[]>([]);
   const [loading, setLoading] = useState(true);
-  const [_previousCamera, setPreviousCamera] = useState<CameraState | null>(null);
+  const [previousCamera, setPreviousCamera] = useState<CameraState | null>(null);
   const [showOnlyPlanets, setShowOnlyPlanets] = useState(false);
 
   useEffect(() => {
@@ -71,13 +71,13 @@ function App() {
 
   const handlePlanetSelect = (planet: Exoplanet) => {
     setSelectedPlanet(planet);
-    setSelectedStar(null); // Clear star when planet is selected
+    // DON'T clear selectedStar - keep the planetary system view visible
     console.log('Planet selected in App:', planet.pl_name);
   };
 
   const handleStarSelectInSystem = (star: GaiaStar) => {
-    setSelectedStar(star);
-    setSelectedPlanet(null); // Clear planet when star is selected
+    // Keep the same star selected, just update the UI panel
+    setSelectedPlanet(null); // Clear planet when star is clicked
     console.log('Star selected in system view:', star.star_name);
   };
 
@@ -93,6 +93,7 @@ function App() {
         onCameraChange={setPreviousCamera}
         onPlanetSelect={handlePlanetSelect}
         onStarSelectInSystem={handleStarSelectInSystem}
+        savedCameraPosition={previousCamera}
       />
       <UI
         selectedStar={selectedStar}
