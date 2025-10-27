@@ -86,6 +86,35 @@ pnpm add -g vercel
 vercel
 ```
 
+**⚠️ Important for Vercel Deployment:**
+
+The `public/data` folder contains large JSON files (31MB+ for star data). Vercel has file size limits that may prevent these files from deploying properly.
+
+**Solutions:**
+
+1. **Use Git LFS** (recommended):
+   ```bash
+   git lfs install
+   git lfs track "public/data/*.json"
+   git add .gitattributes
+   git add public/data/
+   git commit -m "Add data files with LFS"
+   git push
+   ```
+
+2. **Host data files externally**:
+   - Upload data files to a CDN (Cloudflare R2, AWS S3, etc.)
+   - Update `/src/services/gaiaService.ts` to fetch from CDN URL
+   - Example: Change `'/data/milky_way_stars.json'` to `'https://your-cdn.com/milky_way_stars.json'`
+
+3. **Reduce dataset size**:
+   ```bash
+   # Generate smaller dataset (10,000 stars instead of 50,000)
+   node scripts/generateMilkyWayData.cjs 10000
+   ```
+
+If data files fail to load on Vercel, the app will fall back to 2,000 mock stars automatically.
+
 ## License
 
 MIT

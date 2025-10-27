@@ -1,5 +1,7 @@
 // Exoplanet service - loads planetary systems from local data
 
+import { getDataUrl } from '../config/cdn';
+
 export interface Exoplanet {
   pl_name: string;
   hostname: string;
@@ -107,7 +109,9 @@ export async function fetchExoplanets(): Promise<Exoplanet[]> {
   console.log('🪐 Loading exoplanets from local dataset...');
 
   try {
-    const response = await fetch('/data/exoplanets.json');
+    const dataUrl = getDataUrl('exoplanets');
+    console.log(`📡 Fetching exoplanet data from: ${dataUrl}`);
+    const response = await fetch(dataUrl);
 
     if (!response.ok) {
       throw new Error(`Failed to load exoplanets: ${response.status}`);
@@ -119,6 +123,8 @@ export async function fetchExoplanets(): Promise<Exoplanet[]> {
     return exoplanets;
   } catch (error) {
     console.error('❌ Error loading exoplanets:', error);
+    console.error('📁 Make sure /data/exoplanets.json exists and is accessible');
+    console.error('⚠️ On Vercel, large files may need to be hosted externally or compressed');
     return [];
   }
 }

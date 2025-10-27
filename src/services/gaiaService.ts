@@ -1,6 +1,8 @@
 // Gaia API Service
 // Uses ESA Gaia Archive TAP (Table Access Protocol) service
 
+import { getDataUrl } from '../config/cdn';
+
 export interface GaiaStar {
   source_id: string;
   star_name?: string; // Human-readable star name
@@ -43,7 +45,9 @@ export async function fetchGaiaStars(
 
   try {
     // Load the pre-generated Milky Way dataset
-    const response = await fetch('/data/milky_way_stars.json');
+    const dataUrl = getDataUrl('milky_way_stars');
+    console.log(`📡 Fetching star data from: ${dataUrl}`);
+    const response = await fetch(dataUrl);
 
     if (!response.ok) {
       throw new Error(`Failed to load star data: ${response.status}`);
@@ -65,7 +69,9 @@ export async function fetchGaiaStars(
     return stars;
   } catch (error) {
     console.error('❌ Error loading star data:', error);
-    console.warn('⚠️ Falling back to generated mock data');
+    console.error('📁 Make sure /data/milky_way_stars.json exists and is accessible');
+    console.error('⚠️ On Vercel, large files may need to be hosted externally or compressed');
+    console.warn('⚠️ Falling back to generated mock data (2000 stars)');
     return generateMockStars(Math.min(limit, 2000));
   }
 
