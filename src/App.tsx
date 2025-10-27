@@ -3,6 +3,7 @@ import Scene from './components/Scene';
 import UI from './components/UI';
 import Statistics from './components/Statistics';
 import { GaiaStar, fetchGaiaStars } from './services/gaiaService';
+import { Exoplanet } from './services/exoplanetService';
 
 type ViewMode = 'galaxy' | 'system';
 
@@ -14,6 +15,7 @@ interface CameraState {
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('galaxy');
   const [selectedStar, setSelectedStar] = useState<GaiaStar | null>(null);
+  const [selectedPlanet, setSelectedPlanet] = useState<Exoplanet | null>(null);
   const [stars, setStars] = useState<GaiaStar[]>([]);
   const [allStars, setAllStars] = useState<GaiaStar[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,18 @@ function App() {
     setShowOnlyPlanets(!showOnlyPlanets);
   };
 
+  const handlePlanetSelect = (planet: Exoplanet) => {
+    setSelectedPlanet(planet);
+    setSelectedStar(null); // Clear star when planet is selected
+    console.log('Planet selected in App:', planet.pl_name);
+  };
+
+  const handleStarSelectInSystem = (star: GaiaStar) => {
+    setSelectedStar(star);
+    setSelectedPlanet(null); // Clear planet when star is selected
+    console.log('Star selected in system view:', star.star_name);
+  };
+
   const planetarySystemCount = allStars.filter(star => star.has_planets).length;
 
   return (
@@ -77,9 +91,12 @@ function App() {
         viewMode={viewMode}
         onStarClick={handleStarClick}
         onCameraChange={setPreviousCamera}
+        onPlanetSelect={handlePlanetSelect}
+        onStarSelectInSystem={handleStarSelectInSystem}
       />
       <UI
         selectedStar={selectedStar}
+        selectedPlanet={selectedPlanet}
         starCount={stars.length}
         loading={loading}
         viewMode={viewMode}

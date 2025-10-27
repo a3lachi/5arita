@@ -4,11 +4,13 @@ import {
   getSpectralClass,
   getTotalProperMotion,
 } from '../services/gaiaService';
+import { Exoplanet, getPlanetCategory } from '../services/exoplanetService';
 
 type ViewMode = 'galaxy' | 'system';
 
 interface UIProps {
   selectedStar: GaiaStar | null;
+  selectedPlanet?: Exoplanet | null;
   starCount: number;
   loading: boolean;
   viewMode: ViewMode;
@@ -18,7 +20,7 @@ interface UIProps {
   planetarySystemCount: number;
 }
 
-export default function UI({ selectedStar, starCount, loading, viewMode, onReturnToGalaxy, showOnlyPlanets, onTogglePlanetFilter, planetarySystemCount }: UIProps) {
+export default function UI({ selectedStar, selectedPlanet, starCount, loading, viewMode, onReturnToGalaxy, showOnlyPlanets, onTogglePlanetFilter, planetarySystemCount }: UIProps) {
   const distance = selectedStar ? getDistanceInLightYears(selectedStar.parallax) : 0;
   const spectralClass = selectedStar ? getSpectralClass(selectedStar.teff_gspphot) : '';
   const totalPM = selectedStar
@@ -163,6 +165,129 @@ export default function UI({ selectedStar, starCount, loading, viewMode, onRetur
                 <span className="label">Radial Velocity:</span>
                 <span className="value">{selectedStar.radial_velocity.toFixed(2)} km/s</span>
               </div>
+            )}
+          </>
+        )}
+
+        {/* Selected Planet Data */}
+        {selectedPlanet && (
+          <>
+            <div className="divider"></div>
+            <h3>🪐 {selectedPlanet.pl_name}</h3>
+
+            <h4 className="section-title">Planet Properties</h4>
+            {selectedPlanet.pl_rade && (
+              <div className="info-item">
+                <span className="label">Radius:</span>
+                <span className="value">{selectedPlanet.pl_rade.toFixed(2)} R⊕</span>
+              </div>
+            )}
+            {selectedPlanet.pl_radj && (
+              <div className="info-item">
+                <span className="label">Radius:</span>
+                <span className="value">{selectedPlanet.pl_radj.toFixed(2)} R♃</span>
+              </div>
+            )}
+            {(selectedPlanet.pl_bmasse || selectedPlanet.pl_masse) && (
+              <div className="info-item">
+                <span className="label">Mass:</span>
+                <span className="value">{(selectedPlanet.pl_bmasse || selectedPlanet.pl_masse)?.toFixed(2)} M⊕</span>
+              </div>
+            )}
+            {selectedPlanet.pl_dens && (
+              <div className="info-item">
+                <span className="label">Density:</span>
+                <span className="value">{selectedPlanet.pl_dens.toFixed(2)} g/cm³</span>
+              </div>
+            )}
+            {selectedPlanet.pl_eqt && (
+              <div className="info-item">
+                <span className="label">Equilibrium Temp:</span>
+                <span className="value">{selectedPlanet.pl_eqt.toFixed(0)} K</span>
+              </div>
+            )}
+            {selectedPlanet.pl_rade && (
+              <div className="info-item">
+                <span className="label">Category:</span>
+                <span className="value">{getPlanetCategory(selectedPlanet.pl_rade)}</span>
+              </div>
+            )}
+            {selectedPlanet.habitable && (
+              <div className="info-item">
+                <span className="label">🌍 Habitable:</span>
+                <span className="value">Potentially</span>
+              </div>
+            )}
+
+            <h4 className="section-title">Orbital Parameters</h4>
+            {selectedPlanet.pl_orbsmax && (
+              <div className="info-item">
+                <span className="label">Semi-major Axis:</span>
+                <span className="value">{selectedPlanet.pl_orbsmax.toFixed(3)} AU</span>
+              </div>
+            )}
+            {selectedPlanet.pl_orbper && (
+              <div className="info-item">
+                <span className="label">Orbital Period:</span>
+                <span className="value">{selectedPlanet.pl_orbper.toFixed(2)} days</span>
+              </div>
+            )}
+            {selectedPlanet.pl_orbeccen !== undefined && selectedPlanet.pl_orbeccen !== null && (
+              <div className="info-item">
+                <span className="label">Eccentricity:</span>
+                <span className="value">{selectedPlanet.pl_orbeccen.toFixed(3)}</span>
+              </div>
+            )}
+            {selectedPlanet.pl_orbincl && (
+              <div className="info-item">
+                <span className="label">Inclination:</span>
+                <span className="value">{selectedPlanet.pl_orbincl.toFixed(2)}°</span>
+              </div>
+            )}
+
+            <h4 className="section-title">Discovery</h4>
+            {selectedPlanet.discoverymethod && (
+              <div className="info-item">
+                <span className="label">Method:</span>
+                <span className="value">{selectedPlanet.discoverymethod}</span>
+              </div>
+            )}
+            {selectedPlanet.disc_year && (
+              <div className="info-item">
+                <span className="label">Year:</span>
+                <span className="value">{selectedPlanet.disc_year}</span>
+              </div>
+            )}
+            {selectedPlanet.disc_facility && (
+              <div className="info-item">
+                <span className="label">Facility:</span>
+                <span className="value-small">{selectedPlanet.disc_facility}</span>
+              </div>
+            )}
+
+            {/* Spectroscopy Data */}
+            {(selectedPlanet.pl_ntranspec || selectedPlanet.pl_nespec || selectedPlanet.pl_ndispec) && (
+              <>
+                <h4 className="section-title">Atmospheric Data</h4>
+                {selectedPlanet.pl_ntranspec && selectedPlanet.pl_ntranspec > 0 && (
+                  <div className="info-item">
+                    <span className="label">Transmission Spectra:</span>
+                    <span className="value">{selectedPlanet.pl_ntranspec}</span>
+                  </div>
+                )}
+                {selectedPlanet.pl_nespec && selectedPlanet.pl_nespec > 0 && (
+                  <div className="info-item">
+                    <span className="label">Eclipse Spectra:</span>
+                    <span className="value">{selectedPlanet.pl_nespec}</span>
+                  </div>
+                )}
+                {selectedPlanet.pl_ndispec && selectedPlanet.pl_ndispec > 0 && (
+                  <div className="info-item">
+                    <span className="label">Direct Imaging Spectra:</span>
+                    <span className="value">{selectedPlanet.pl_ndispec}</span>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

@@ -4,6 +4,7 @@ import { Dispatch, SetStateAction } from 'react';
 import ClickableStarField from './ClickableStarField';
 import PlanetarySystemView from './PlanetarySystemView';
 import { GaiaStar } from '../services/gaiaService';
+import { Exoplanet } from '../services/exoplanetService';
 import * as THREE from 'three';
 
 type ViewMode = 'galaxy' | 'system';
@@ -19,9 +20,11 @@ interface SceneProps {
   viewMode: ViewMode;
   onStarClick: (star: GaiaStar) => void;
   onCameraChange: Dispatch<SetStateAction<CameraState | null>>;
+  onPlanetSelect?: (planet: Exoplanet) => void;
+  onStarSelectInSystem?: (star: GaiaStar) => void;
 }
 
-export default function Scene({ stars, selectedStar, viewMode, onStarClick, onCameraChange: _onCameraChange }: SceneProps) {
+export default function Scene({ stars, selectedStar, viewMode, onStarClick, onCameraChange: _onCameraChange, onPlanetSelect, onStarSelectInSystem }: SceneProps) {
   return (
     <Canvas gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
       {/* Camera */}
@@ -53,7 +56,11 @@ export default function Scene({ stars, selectedStar, viewMode, onStarClick, onCa
         </>
       ) : selectedStar ? (
         /* Planetary system view */
-        <PlanetarySystemView star={selectedStar} />
+        <PlanetarySystemView
+          star={selectedStar}
+          onPlanetSelect={onPlanetSelect}
+          onStarSelect={onStarSelectInSystem}
+        />
       ) : null}
 
       {/* Camera controls */}

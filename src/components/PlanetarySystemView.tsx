@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Exoplanet, getExoplanetsForStar, getHabitableZone } from '../services/exoplanetService';
 import { GaiaStar, colorIndexToRGB } from '../services/gaiaService';
-import { Sphere, Ring, Text, Html } from '@react-three/drei';
+import { Sphere, Ring, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface PlanetarySystemViewProps {
   star: GaiaStar;
+  onPlanetSelect?: (planet: Exoplanet) => void;
+  onStarSelect?: (star: GaiaStar) => void;
 }
 
-export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) {
+export default function PlanetarySystemView({ star, onPlanetSelect, onStarSelect }: PlanetarySystemViewProps) {
   const [planets, setPlanets] = useState<Exoplanet[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,15 +50,18 @@ export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) 
           />
         </Sphere>
 
-        <Text
-          position={[0, 1.5, 0]}
-          fontSize={0.3}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {star.star_name || 'Star'}
-        </Text>
+        <Html position={[0, 1.5, 0]} center>
+          <div style={{
+            color: 'white',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            textShadow: '0 0 8px black, 0 0 12px black',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+          }}>
+            {star.star_name || 'Star'}
+          </div>
+        </Html>
 
         <Html center position={[0, -2, 0]}>
           <div style={{
@@ -81,18 +86,28 @@ export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) 
   const [r, g, b] = colorIndexToRGB(star.bp_rp);
   const starColor = new THREE.Color(r, g, b);
 
-  // Scale factor for visualization (1 AU = 10 units in scene)
-  const AU_SCALE = 10;
-
   // Get habitable zone
   const starTemp = planets[0]?.st_teff || star.teff_gspphot || 5778;
   const starRadius = planets[0]?.st_rad || 1.0;
   const { inner: hzInner, outer: hzOuter } = getHabitableZone(starTemp, starRadius);
 
+  // Dynamic scale factor based on outermost planet
+  const maxOrbit = Math.max(...planets.map(p => p.pl_orbsmax || 1));
+  const AU_SCALE = maxOrbit > 10 ? 50 / maxOrbit : 10; // Scale so largest orbit fits in ~50 units
+
   return (
     <group>
       {/* Central Star */}
-      <Sphere args={[0.5, 32, 32]} position={[0, 0, 0]}>
+      <Sphere
+        args={[0.5, 32, 32]}
+        position={[0, 0, 0]}
+        onClick={() => {
+          onStarSelect?.(star);
+          console.log('Star clicked:', star.star_name);
+        }}
+        onPointerOver={() => (document.body.style.cursor = 'pointer')}
+        onPointerOut={() => (document.body.style.cursor = 'default')}
+      >
         <meshStandardMaterial
           color={starColor}
           emissive={starColor}
@@ -111,16 +126,19 @@ export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) 
         />
       </Sphere>
 
-      {/* Star name */}
-      <Text
-        position={[0, 1.5, 0]}
-        fontSize={0.3}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {planets[0]?.hostname || star.star_name || 'Host Star'}
-      </Text>
+      {/* Star name - using Html so it follows camera */}
+      <Html position={[0, 1.5, 0]} center>
+        <div style={{
+          color: 'white',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          textShadow: '0 0 8px black, 0 0 12px black',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+        }}>
+          {planets[0]?.hostname || star.star_name || 'Host Star'}
+        </div>
+      </Html>
 
       {/* System info */}
       <Html position={[0, -2, 0]} center>
@@ -168,30 +186,32 @@ export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) 
             </Ring>
 
             {/* Planet */}
-            <Sphere args={[planetRadius, 32, 32]} position={[x, 0, z]}>
+            <Sphere
+              args={[planetRadius, 32, 32]}
+              position={[x, 0, z]}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPlanetSelect?.(planet);
+                console.log('Planet clicked:', planet.pl_name);
+              }}
+              onPointerOver={() => (document.body.style.cursor = 'pointer')}
+              onPointerOut={() => (document.body.style.cursor = 'default')}
+            >
               <meshStandardMaterial color={planetColor} />
             </Sphere>
 
-            {/* Planet label with details */}
+            {/* Planet label - only name */}
             <Html position={[x, planetRadius + 0.3, z]} center>
               <div style={{
                 color: 'white',
                 fontSize: '12px',
-                background: 'rgba(0,0,0,0.8)',
-                padding: '4px 8px',
-                borderRadius: '4px',
+                fontWeight: 'bold',
+                textShadow: '0 0 4px black, 0 0 8px black',
                 whiteSpace: 'nowrap',
-                textAlign: 'center'
+                textAlign: 'center',
+                pointerEvents: 'none',
               }}>
-                <div>{planet.pl_name.split(' ').pop()}{planet.habitable ? ' 🌍' : ''}</div>
-                <div style={{ fontSize: '10px', color: '#aaa' }}>
-                  {planetRadiusEarth.toFixed(2)} R⊕ • {(planet.pl_orbsmax || 0).toFixed(2)} AU
-                </div>
-                {temp && (
-                  <div style={{ fontSize: '10px', color: '#aaa' }}>
-                    {temp.toFixed(0)}K
-                  </div>
-                )}
+                {planet.pl_name}{planet.habitable ? ' 🌍' : ''}
               </div>
             </Html>
           </group>
@@ -207,14 +227,18 @@ export default function PlanetarySystemView({ star }: PlanetarySystemViewProps) 
           side={THREE.DoubleSide}
         />
       </Ring>
-      <Text
-        position={[0, 0, hzOuter * AU_SCALE + 0.5]}
-        fontSize={0.2}
-        color="#4CAF50"
-        anchorX="center"
-      >
-        Habitable Zone
-      </Text>
+      <Html position={[0, 0, hzOuter * AU_SCALE + 0.5]} center>
+        <div style={{
+          color: '#4CAF50',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          textShadow: '0 0 4px black, 0 0 8px black',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+        }}>
+          Habitable Zone
+        </div>
+      </Html>
     </group>
   );
 }
