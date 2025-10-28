@@ -16,19 +16,13 @@ export const CDN_CONFIG = {
 
 // Helper function to get the correct URL
 export function getDataUrl(filename: 'milky_way_stars' | 'exoplanets'): string {
-  console.log('🔧 CDN Config:', { USE_CDN: CDN_CONFIG.USE_CDN, BLOB_BASE_URL: CDN_CONFIG.BLOB_BASE_URL });
-
   if (CDN_CONFIG.USE_CDN && CDN_CONFIG.BLOB_BASE_URL) {
     const path = filename === 'milky_way_stars'
       ? CDN_CONFIG.MILKY_WAY_STARS
       : CDN_CONFIG.EXOPLANETS;
-    const url = `${CDN_CONFIG.BLOB_BASE_URL}${path}`;
-    console.log('✅ Using CDN URL:', url);
-    return url;
+    return `${CDN_CONFIG.BLOB_BASE_URL}${path}`;
   }
 
   // Fallback to local files
-  const localUrl = `/data/${filename}.json`;
-  console.log('⚠️ Using local URL:', localUrl);
-  return localUrl;
+  return `/data/${filename}.json`;
 }
