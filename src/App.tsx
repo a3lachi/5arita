@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Scene from './components/Scene';
 import UI from './components/UI';
-import Statistics from './components/Statistics';
 import { GaiaStar, fetchGaiaStars } from './services/gaiaService';
 import { Exoplanet } from './services/exoplanetService';
 

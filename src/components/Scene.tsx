@@ -1,4 +1,4 @@
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Stars } from '@react-three/drei';
 import { Dispatch, SetStateAction, useEffect, useRef } from 'react';
 import ClickableStarField from './ClickableStarField';
