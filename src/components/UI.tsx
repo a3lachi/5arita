@@ -64,12 +64,12 @@ export default function UI({ selectedStar, selectedPlanet, starCount, loading, v
           <span className="label">Stars Loaded:</span>
           <span className="value">{loading ? 'Loading...' : starCount.toLocaleString()}</span>
         </div>
-        {viewMode === 'galaxy' && planetarySystemCount > 0 && (
+        {viewMode === 'galaxy' && planetarySystemCount > 0 ? (
           <div className="info-item">
             <span className="label">🪐 Planetary Systems:</span>
             <span className="value">{planetarySystemCount.toLocaleString()}</span>
           </div>
-        )}
+        ) : null}
         {selectedStar && (
           <>
             <div className="divider"></div>
@@ -266,7 +266,9 @@ export default function UI({ selectedStar, selectedPlanet, starCount, loading, v
             )}
 
             {/* Spectroscopy Data */}
-            {(selectedPlanet.pl_ntranspec || selectedPlanet.pl_nespec || selectedPlanet.pl_ndispec) && (
+            {((selectedPlanet.pl_ntranspec && selectedPlanet.pl_ntranspec > 0) ||
+              (selectedPlanet.pl_nespec && selectedPlanet.pl_nespec > 0) ||
+              (selectedPlanet.pl_ndispec && selectedPlanet.pl_ndispec > 0)) ? (
               <>
                 <h4 className="section-title">Atmospheric Data</h4>
                 {selectedPlanet.pl_ntranspec && selectedPlanet.pl_ntranspec > 0 && (
@@ -288,7 +290,7 @@ export default function UI({ selectedStar, selectedPlanet, starCount, loading, v
                   </div>
                 )}
               </>
-            )}
+            ) : null}
           </>
         )}
       </div>

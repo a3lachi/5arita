@@ -26,9 +26,9 @@ function App() {
     async function loadStars() {
       setLoading(true);
       try {
-        // Load all 50,000 stars from the Milky Way dataset
-        // Magnitude 0-10 gives us a good visible range
-        const gaiaStars = await fetchGaiaStars(50000, -2, 10);
+        // Load ALL stars from the NASA dataset (no magnitude filtering)
+        // This loads all 46,765 stellar hosts with exoplanets
+        const gaiaStars = await fetchGaiaStars(50000, -10, 20);
         setAllStars(gaiaStars);
         setStars(gaiaStars);
       } catch (error) {

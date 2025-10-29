@@ -4,7 +4,6 @@
 export const CDN_CONFIG = {
   // Set to true to use CDN, false to use local files
   USE_CDN: true,
-
   // Base URL for your Vercel Blob Storage
   // Format: https://your-blob-url.vercel-storage.com (no trailing slash)
   BLOB_BASE_URL: 'https://6ep0fmc0ekul9vo1.public.blob.vercel-storage.com',
