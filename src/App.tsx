@@ -105,8 +105,8 @@ function App() {
         showOnlyPlanets={showOnlyPlanets}
         onTogglePlanetFilter={handleTogglePlanetFilter}
         planetarySystemCount={planetarySystemCount}
+        allStars={stars}
       />
-      {!loading && stars.length > 0 && viewMode === 'galaxy' && <Statistics stars={stars} />}
     </div>
   );
 }

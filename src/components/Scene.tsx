@@ -1,5 +1,5 @@
-import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Stars, Environment } from '@react-three/drei';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera, Stars } from '@react-three/drei';
 import { Dispatch, SetStateAction, useEffect, useRef } from 'react';
 import ClickableStarField from './ClickableStarField';
 import PlanetarySystemView from './PlanetarySystemView';
@@ -27,7 +27,7 @@ interface SceneProps {
 
 // Component to control camera position based on view mode
 function CameraController({ viewMode, savedPosition, onCameraChange }: { viewMode: ViewMode; savedPosition: CameraState | null | undefined; onCameraChange: Dispatch<SetStateAction<CameraState | null>> }) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const controlsRef = useRef<any>(null);
   const prevViewMode = useRef(viewMode);
 
@@ -64,16 +64,58 @@ function CameraController({ viewMode, savedPosition, onCameraChange }: { viewMod
     prevViewMode.current = viewMode;
   }, [viewMode, savedPosition, camera, onCameraChange]);
 
+  // Custom wheel handler for unlimited forward movement
+  useEffect(() => {
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+
+      // Get direction from camera to target
+      const direction = new THREE.Vector3();
+      const target = new THREE.Vector3(0, 0, 0); // Galaxy center
+
+      direction.subVectors(target, camera.position);
+      const distanceToCenter = direction.length();
+
+      // Normalize direction (or use camera direction if at center)
+      if (distanceToCenter > 0.1) {
+        direction.normalize();
+      } else {
+        // When at center, use camera's facing direction
+        camera.getWorldDirection(direction);
+      }
+
+      // Move camera forward/backward
+      const moveSpeed = event.deltaY * 0.1;
+      camera.position.addScaledVector(direction, moveSpeed);
+
+      if (controlsRef.current) {
+        controlsRef.current.update();
+      }
+    };
+
+    const canvas = gl.domElement;
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, [camera, gl]);
+
   return <OrbitControls
     ref={controlsRef}
+    target={[0, 0, 0]}
     enablePan={true}
-    enableZoom={true}
+    enableZoom={false}
     enableRotate={true}
-    minDistance={viewMode === 'galaxy' ? 20 : 2}
-    maxDistance={viewMode === 'galaxy' ? 500 : 50}
     autoRotate={false}
-    zoomSpeed={1.2}
+    panSpeed={2}
     rotateSpeed={0.8}
+    enableDamping={true}
+    dampingFactor={0.05}
+    minPolarAngle={0}
+    maxPolarAngle={Math.PI}
+    minDistance={0}
+    maxDistance={Infinity}
   />;
 }
 
@@ -85,6 +127,8 @@ export default function Scene({ stars, selectedStar, viewMode, onStarClick, onCa
         makeDefault
         position={[0, 0, 150]}
         fov={60}
+        near={0.01}
+        far={100000}
       />
 
       {/* Lighting */}
@@ -118,9 +162,6 @@ export default function Scene({ stars, selectedStar, viewMode, onStarClick, onCa
 
       {/* Camera controls */}
       <CameraController viewMode={viewMode} savedPosition={savedCameraPosition} onCameraChange={onCameraChange} />
-
-      {/* Subtle environment lighting */}
-      {viewMode === 'galaxy' && <Environment preset="night" />}
     </Canvas>
   );
 }
