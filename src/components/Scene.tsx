@@ -64,8 +64,14 @@ function CameraController({ viewMode, savedPosition, onCameraChange }: { viewMod
     prevViewMode.current = viewMode;
   }, [viewMode, savedPosition, camera, onCameraChange]);
 
-  // Custom wheel handler for unlimited forward movement
+  // Custom wheel handler for unlimited forward movement on desktop
   useEffect(() => {
+    // Check if device is mobile/touch
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    // Only override wheel on desktop - let OrbitControls handle mobile touch
+    if (isTouchDevice) return;
+
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
 
@@ -105,9 +111,10 @@ function CameraController({ viewMode, savedPosition, onCameraChange }: { viewMod
     ref={controlsRef}
     target={[0, 0, 0]}
     enablePan={true}
-    enableZoom={false}
+    enableZoom={true}
     enableRotate={true}
     autoRotate={false}
+    zoomSpeed={2}
     panSpeed={2}
     rotateSpeed={0.8}
     enableDamping={true}
@@ -116,6 +123,10 @@ function CameraController({ viewMode, savedPosition, onCameraChange }: { viewMod
     maxPolarAngle={Math.PI}
     minDistance={0}
     maxDistance={Infinity}
+    touches={{
+      ONE: THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_PAN
+    }}
   />;
 }
 
